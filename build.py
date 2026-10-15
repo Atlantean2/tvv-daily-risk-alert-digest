@@ -1,26 +1,47 @@
-import mammoth, os, re, html
-D="2026-10-14"; src=f"../issues/{D}/TVV Slate {D} with Graphs.docx"
-imgdir=f"issues/img/{D}"; os.makedirs(imgdir,exist_ok=True); n=[0]
-def img(i):
-    n[0]+=1; ext=i.content_type.split("/")[-1]; fn=f"g{n[0]:02d}.{ext}"
-    with i.open() as f, open(f"{imgdir}/{fn}","wb") as o: o.write(f.read())
-    return {"src":f"img/{D}/{fn}","alt":f"Graph {n[0]}","loading":"lazy"}
-body=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
-body=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',body)
+"""Usage: python3 build.py [YYYY-MM-DD path/to/slate.docx]
+With args: (re)render that issue into issues/DATE.html. Always regenerates index.html tabs from issues/*.html."""
+import mammoth, os, re, html, sys, json, datetime
+T="TechVestVentures Daily Risk Alert Digest"
+def render(D,src):
+    imgdir=f"issues/img/{D}"; os.makedirs(imgdir,exist_ok=True); n=[0]
+    def img(i):
+        n[0]+=1; ext=i.content_type.split("/")[-1]; fn=f"g{n[0]:02d}.{ext}"
+        with i.open() as f, open(f"{imgdir}/{fn}","wb") as o: o.write(f.read())
+        return {"src":f"img/{D}/{fn}","alt":f"Graph {n[0]}","loading":"lazy"}
+    b=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
+    b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
+    # desk headings -> h2
+    b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*)</strong></p>',r'<h2 class="desk">\1</h2>',b)
+    # ● paragraphs -> list items, grouped into <ul>
+    b=re.sub(r'<p>\s*●\s*(.*?)</p>',r'<li>\1</li>',b,flags=re.S)
+    b=re.sub(r'((?:<li>.*?</li>)+)',r'<ul class="items">\1</ul>',b,flags=re.S)
+    page=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T} — {D}</title><link rel="stylesheet" href="../assets/style.css"><script>if(!/[?&]raw/.test(location.search))location.replace("../index.html#{D}")</script></head><body><main id="issue">{b}</main></body></html>'''
+    open(f"issues/{D}.html","w").write(page); print(D,n[0],"images")
 CSS="""body{margin:0;font:16px/1.5 Arial,Helvetica,sans-serif;color:#111;background:#fafafa}
-header{position:sticky;top:0;z-index:9;background:#fff;border-bottom:3px solid #e8063c;display:flex;align-items:center;gap:14px;padding:8px 16px;box-shadow:0 2px 6px #0002}
-header img{height:56px}header h1{font-size:1.25rem;margin:0}header a{color:inherit;text-decoration:none}
+#top{position:sticky;top:0;z-index:9;background:#fff;box-shadow:0 2px 6px #0002}
+header{border-bottom:3px solid #e8063c;display:flex;align-items:center;gap:14px;padding:8px 16px}
+header img{height:56px}header h1{font-size:1.25rem;margin:0}
+#tabs{display:flex;gap:6px;overflow-x:auto;white-space:nowrap;padding:6px 12px;background:#f3f3f3;border-bottom:1px solid #ddd;-webkit-overflow-scrolling:touch}
+#tabs button{flex:0 0 auto;font:600 14px Arial,sans-serif;padding:6px 12px;border:1px solid #bbb;border-radius:16px;background:#fff;color:#222;cursor:pointer}
+#tabs button[aria-selected=true]{background:#e8063c;border-color:#e8063c;color:#fff}
 main{max-width:860px;margin:0 auto;padding:16px;background:#fff}
 main img{max-width:100%;height:auto;display:block;margin:12px auto}
-a{color:#0645ad;text-decoration:underline}h2,h3{border-bottom:1px solid #ddd;padding-top:8px}
-nav ul{padding-left:1.2em}@media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}"""
+a{color:#0645ad;text-decoration:underline}h2{border-bottom:1px solid #ddd;padding-top:8px;font-size:1.2rem;scroll-margin-top:130px}
+ul.items{padding-left:1.3em}ul.items li{margin:6px 0}
+@media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}"""
+if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
 open("assets/style.css","w").write(CSS)
-T="TechVestVentures Daily Risk Alert Digest"
-def page(title,content,pre):
-    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)}</title><link rel="stylesheet" href="{pre}assets/style.css"></head><body><header><a href="{pre}index.html"><img src="{pre}assets/logo.png" alt="TVV logo"></a><h1><a href="{pre}index.html">{T}</a></h1></header><main>{content}</main></body></html>'''
-open(f"issues/{D}.html","w").write(page(f"{T} — {D}",f'<p><a href="../index.html">← All issues</a></p>'+body,"../"))
-issues=sorted([f[:-5] for f in os.listdir("issues") if f.endswith(".html")],reverse=True)
-lst="".join(f'<li><a href="issues/{d}.html">{d}</a></li>' for d in issues)
-latest=body.replace('src="img/','src="issues/img/')
-open("index.html","w").write(page(T,f'<nav><h2>Issues</h2><ul>{lst}</ul></nav><h2>Latest issue: {issues[0]}</h2>'+latest,""))
-open(".nojekyll","w").write(""); print(n[0],"images")
+issues=sorted([f[:-5] for f in os.listdir("issues") if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.html",f)],reverse=True)
+lab={d:datetime.date.fromisoformat(d).strftime("%a %b %-d, %Y") for d in issues}
+tabs="".join(f'<button role="tab" data-d="{d}" aria-selected="false">{lab[d]}</button>' for d in issues)
+JS="""const tabs=[...document.querySelectorAll('#tabs button')],m=document.getElementById('content'),ds=tabs.map(t=>t.dataset.d);
+async function show(d){if(!ds.includes(d))d=ds[0];tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.d==d));
+document.querySelector(`#tabs [data-d="${d}"]`).scrollIntoView({inline:'nearest',block:'nearest'});
+m.innerHTML='<p>Loading…</p>';try{const r=await fetch('issues/'+d+'.html',{cache:'no-cache'});const doc=new DOMParser().parseFromString(await r.text(),'text/html');
+const c=doc.querySelector('#issue');c.querySelectorAll('img').forEach(i=>i.setAttribute('src','issues/'+i.getAttribute('src')));
+c.querySelectorAll('a[href^="http"]').forEach(a=>{a.target='_blank';a.rel='noopener'});m.innerHTML=c.innerHTML;document.title=TT+' — '+d;window.scrollTo(0,0)}
+catch(e){m.innerHTML='<p>Could not load issue '+d+'.</p>'}}
+const TT=document.title;tabs.forEach(t=>t.onclick=()=>{location.hash=t.dataset.d});
+addEventListener('hashchange',()=>show(location.hash.slice(1)));show(location.hash.slice(1));"""
+idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title><link rel="stylesheet" href="assets/style.css"></head><body><div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
+open("index.html","w").write(idx); open(".nojekyll","w").write(""); print("tabs:",issues)
