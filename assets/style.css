@@ -7,6 +7,7 @@ header img{height:56px}header h1{font-size:1.25rem;margin:0}
 #tabs button[aria-selected=true]{background:#e8063c;border-color:#e8063c;color:#fff}
 main{max-width:860px;margin:0 auto;padding:16px;background:#fff}
 main img{max-width:100%;height:auto;display:block;margin:12px auto}
-a{color:#0645ad;text-decoration:underline}h2{border-bottom:1px solid #ddd;padding-top:8px;font-size:1.2rem;scroll-margin-top:130px}
-ul.items{padding-left:1.3em}ul.items li{margin:6px 0}
+a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
+ul.items{margin-left:24px;padding-left:1.1em}
+.action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}ul.items li{margin:6px 0}
 @media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}

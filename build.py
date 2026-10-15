@@ -11,7 +11,9 @@ def render(D,src):
     b=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
-    b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*)</strong></p>',r'<h2 class="desk">\1</h2>',b)
+    b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
+    # ACTION-ALERT block (through the paragraph before Graph Sources) -> red-bordered box
+    b=re.sub(r'(<p>(?:(?!<p>).)*?ACTION-ALERT.*?)(?=<p><strong>Graph Sources|$)',r'<div class="action-box">\1</div>',b,count=1,flags=re.S)
     # ● paragraphs -> list items, grouped into <ul>
     b=re.sub(r'<p>\s*●\s*(.*?)</p>',r'<li>\1</li>',b,flags=re.S)
     b=re.sub(r'((?:<li>.*?</li>)+)',r'<ul class="items">\1</ul>',b,flags=re.S)
@@ -26,8 +28,9 @@ header img{height:56px}header h1{font-size:1.25rem;margin:0}
 #tabs button[aria-selected=true]{background:#e8063c;border-color:#e8063c;color:#fff}
 main{max-width:860px;margin:0 auto;padding:16px;background:#fff}
 main img{max-width:100%;height:auto;display:block;margin:12px auto}
-a{color:#0645ad;text-decoration:underline}h2{border-bottom:1px solid #ddd;padding-top:8px;font-size:1.2rem;scroll-margin-top:130px}
-ul.items{padding-left:1.3em}ul.items li{margin:6px 0}
+a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
+ul.items{margin-left:24px;padding-left:1.1em}
+.action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}ul.items li{margin:6px 0}
 @media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}"""
 if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
 open("assets/style.css","w").write(CSS)
