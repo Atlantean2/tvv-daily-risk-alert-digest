@@ -5,9 +5,10 @@ header img{height:56px}header h1{font-size:1.25rem;margin:0}
 #tabs{display:flex;gap:6px;overflow-x:auto;white-space:nowrap;padding:6px 12px;background:#f3f3f3;border-bottom:1px solid #ddd;-webkit-overflow-scrolling:touch}
 #tabs button{flex:0 0 auto;font:600 14px Arial,sans-serif;padding:6px 12px;border:1px solid #bbb;border-radius:16px;background:#fff;color:#222;cursor:pointer}
 #tabs button[aria-selected=true]{background:#e8063c;border-color:#e8063c;color:#fff}
-main{max-width:860px;margin:0 auto;padding:16px;background:#fff}
-main img{max-width:100%;height:auto;display:block;margin:12px auto}
+main{max-width:1040px;margin:0 auto;padding:16px;background:#fff}
+main img{width:100%;max-width:1000px;height:auto;display:block;margin:14px auto}
 a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
+main table{width:100%;border-collapse:collapse}main td{display:block;width:100%;padding:0}main td:empty{display:none}
 ul.items{margin-left:24px;padding-left:1.1em}
 .action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}ul.items li{margin:6px 0}
 @media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}
