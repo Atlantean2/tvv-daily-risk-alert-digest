@@ -9,6 +9,8 @@ def render(D,src):
         with i.open() as f, open(f"{imgdir}/{fn}","wb") as o: o.write(f.read())
         return {"src":f"img/{D}/{fn}","alt":f"Graph {n[0]}","loading":"lazy"}
     b=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
+    # reader-facing: drop the internal star legend line
+    b=re.sub(r'<p>(?:<[^>]+>)*\s*★\s*=\s*printed in today[^<]*(?:</[^>]+>)*</p>','',b)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
     b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
