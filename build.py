@@ -1,6 +1,7 @@
 """Usage: python3 build.py [YYYY-MM-DD path/to/slate.docx]
 With args: (re)render that issue into issues/DATE.html. Always regenerates index.html tabs from issues/*.html."""
 import mammoth, os, re, html, sys, json, datetime
+sys.path.insert(0,'/workspace/risk-watcher'); from tvv_nav import nav, NAV_CSS
 T="TechVestVentures Daily Risk Alert Digest"
 def render(D,src):
     imgdir=f"issues/img/{D}"; os.makedirs(imgdir,exist_ok=True); n=[0]
@@ -36,7 +37,7 @@ ul.items{margin-left:24px;padding-left:1.1em}
 .action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}ul.items li{margin:6px 0}
 @media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}"""
 if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
-open("assets/style.css","w").write(CSS)
+open("assets/style.css","w").write(CSS+NAV_CSS)
 issues=sorted([f[:-5] for f in os.listdir("issues") if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.html",f)],reverse=True)
 lab={d:datetime.date.fromisoformat(d).strftime("%a %b %-d, %Y") for d in issues}
 tabs="".join(f'<button role="tab" data-d="{d}" aria-selected="false">{lab[d]}</button>' for d in issues)
@@ -49,5 +50,5 @@ c.querySelectorAll('a[href^="http"]').forEach(a=>{a.target='_blank';a.rel='noope
 catch(e){m.innerHTML='<p>Could not load issue '+d+'.</p>'}}
 const TT=document.title;tabs.forEach(t=>t.onclick=()=>{location.hash=t.dataset.d});
 addEventListener('hashchange',()=>show(location.hash.slice(1)));show(location.hash.slice(1));"""
-idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title><link rel="stylesheet" href="assets/style.css"></head><body><div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
+idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title><link rel="stylesheet" href="assets/style.css"></head><body>{nav("digest")}<div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
 open("index.html","w").write(idx); open(".nojekyll","w").write(""); print("tabs:",issues)
