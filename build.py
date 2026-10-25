@@ -15,6 +15,8 @@ def render(D,src):
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
     b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
+    # desk headings typed as Word headings -> same h2
+    b=re.sub(r'<h[1-3]>(?:<strong>)?(\d{1,2}\. [^<]{3,80})(?:</strong>)?</h[1-3]>',r'<h2 class="desk">\1</h2>',b)
     # ACTION-ALERT block (through the paragraph before Graph Sources) -> red-bordered box
     b=re.sub(r'(<p>(?:(?!<p>).)*?ACTION-ALERT.*?)(?=<p><strong>Graph Sources|$)',r'<div class="action-box">\1</div>',b,count=1,flags=re.S)
     # ● paragraphs -> list items, grouped into <ul>
