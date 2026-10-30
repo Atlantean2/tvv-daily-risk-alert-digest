@@ -25,6 +25,8 @@ def render(D,src):
         open(f"{imgdir}/{fn}","wb").write(data)
         return a
     b=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
+    # reader-facing (Michael 10-30): readers never see "Slate" -- first line reads TVV RESEARCH DIGEST
+    b=b.replace("TVV RESEARCH SLATE","TVV RESEARCH DIGEST").replace("Research Slate","Research Digest")
     # reader-facing: drop the internal star legend line
     b=re.sub(r'<p>(?:<[^>]+>)*\s*★\s*=\s*printed in today[^<]*(?:</[^>]+>)*</p>','',b)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
