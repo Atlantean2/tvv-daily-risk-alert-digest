@@ -5,10 +5,25 @@ sys.path.insert(0,'/workspace/risk-watcher'); from tvv_nav import nav, NAV_CSS
 T="TechVestVentures Daily Risk Alert Digest"
 def render(D,src):
     imgdir=f"issues/img/{D}"; os.makedirs(imgdir,exist_ok=True); n=[0]
+    # 2026-10-30 standing method: mirror Michael's docx graph widths (wp:extent cx / usable text width, cap 100%)
+    # and apply any a:srcRect crop -- see /workspace/risk-watcher/docx_img_widths.py
+    from docx_img_widths import pictures, crop_bytes
+    import hashlib
+    P=pictures(src); used=[False]*len(P)
     def img(i):
         n[0]+=1; ext=i.content_type.split("/")[-1]; fn=f"g{n[0]:02d}.{ext}"
-        with i.open() as f, open(f"{imgdir}/{fn}","wb") as o: o.write(f.read())
-        return {"src":f"img/{D}/{fn}","alt":f"Graph {n[0]}","loading":"lazy"}
+        with i.open() as f: data=f.read()
+        h=hashlib.md5(data).hexdigest(); k=n[0]-1
+        if not (k<len(P) and not used[k] and P[k]["md5"]==h):   # fall back to first unused picture with same bytes
+            k=next((j for j,q in enumerate(P) if not used[j] and q["md5"]==h),None)
+        a={"src":f"img/{D}/{fn}","alt":f"Graph {n[0]}","loading":"lazy"}
+        if k is not None:
+            used[k]=True; q=P[k]
+            if q["crop"]: data=crop_bytes(data,q["crop"])
+            a["style"]=f"width:{q['pct']:g}%"
+        else: print("WARN no width match for",fn)
+        open(f"{imgdir}/{fn}","wb").write(data)
+        return a
     b=mammoth.convert_to_html(open(src,"rb"),convert_image=mammoth.images.img_element(img)).value
     # reader-facing: drop the internal star legend line
     b=re.sub(r'<p>(?:<[^>]+>)*\s*★\s*=\s*printed in today[^<]*(?:</[^>]+>)*</p>','',b)
