@@ -29,6 +29,23 @@ def render(D,src):
     b=b.replace("TVV RESEARCH SLATE","TVV RESEARCH DIGEST").replace("Research Slate","Research Digest")
     # reader-facing: drop the internal star legend line
     b=re.sub(r'<p>(?:<[^>]+>)*\s*★\s*=\s*printed in today[^<]*(?:</[^>]+>)*</p>','',b)
+    # 2026-11-03 (Michael pt176u): TVV Risk Center link. Merge "see all graphs click" + "TVV Risk Center" into one link,
+    # and since mammoth drops Word headers, repeat the docx running-header line (when it carries the link) at the top.
+    RC="https://atlantean2.github.io/tvv-daily-risk-alert-digest/"
+    b=re.sub(r'<a href="'+re.escape(RC)+r'">\s*(?:<strong>)?\s*see all graphs click\s*(?:</strong>)?\s*</a>(\s*(?:</?strong>\s*)*)TVV Risk Center',
+             lambda m: '<a class="risk-center" href="'+RC+'">see all graphs click TVV Risk Center</a>'+m.group(1).replace(' ',''),b)
+    b=re.sub(r'<strong>\s*</strong>','',b)
+    try:
+        import zipfile
+        z=zipfile.ZipFile(src); hx=[z.read(n).decode("utf8") for n in sorted(z.namelist()) if re.fullmatch(r"word/header\d+\.xml",n)]
+        hx=next((h for h in hx if "see all graphs click" in re.sub(r"<[^>]+>","",h)),None)
+        if hx:
+            paras=["".join(html.unescape(t) if t else " " for t in re.findall(r"<w:t(?: [^>]*)?>([^<]*)</w:t>|<w:tab/>",p)).strip() for p in re.findall(r"<w:p[ >].*?</w:p>",hx,flags=re.S)]
+            paras=[re.sub(r"\s+"," ",p) for p in paras if p.strip()]
+            line=" — ".join(paras).replace("see all graphs click","").replace("TVV Risk Center","").strip()
+            line=re.sub(r"\s*—\s*—\s*"," — ",line).strip(" —")
+            b=f'<p class="rc-header">{html.escape(line)} &nbsp; <a class="risk-center" href="{RC}">see all graphs click TVV Risk Center</a></p>'+b
+    except Exception as e: print("WARN header",e)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
     b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
@@ -53,7 +70,7 @@ main img{width:100%;max-width:1000px;height:auto;display:block;margin:14px auto}
 a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
 main table{width:100%;border-collapse:collapse}main td{display:block;width:100%;padding:0}main td:empty{display:none}
 ul.items{margin-left:24px;padding-left:1.1em}
-.action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}ul.items li{margin:6px 0}
+.action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}a.risk-center{font-weight:700;color:#C00000}.rc-header{font-size:.9rem;color:#1a1a1a;border-bottom:2px solid #C9A227;padding-bottom:6px;margin:0 0 12px}ul.items li{margin:6px 0}
 @media(max-width:600px){header img{height:40px}header h1{font-size:1rem}}"""
 if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
 open("assets/style.css","w").write(CSS+NAV_CSS)
