@@ -50,24 +50,29 @@ def render(D,src):
             line=re.sub(r"\s*—\s*—\s*"," — ",line).strip(" —")
             b=f'<p class="rc-header">{html.escape(line)} &nbsp; <a class="risk-center" href="{RC}">{click} TVV Risk Center</a></p>'+b
     except Exception as e: print("WARN header",e)
-    # 2026-11-12 (v3): Action Alert Prioritized Risk Summary — heading plus a two-column
+    # 2026-11-12 (v3) / 2026-11-13: Prioritized Risk Summary — heading plus a two-column
     # table (red section label | text) in priority order, with no numbers.
-    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|METALS|SPACE|INFRA|ODDS|TECH|AI"
+    # Accepts the older "Action Alert Prioritized Risk Summary" title and "Sections"
+    # header, and the Nov 13 "Prioritized Risk Summary" / "Sections Ranking" form.
+    # "AI BOOST" must precede "AI" in the alternation.
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
     def _priority_html(m):
-        date=m.group(1).strip()
-        block=m.group(2)
+        heading=m.group(1).strip()
+        date=m.group(2).strip()
+        header=(m.group(3) or "Sections").strip()
+        block=m.group(4)
         items=re.findall(
             r'<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*('+_SUM_LAB+r')\b\s*(?:</span>)*\s*(?:</strong>)?\s*(?:</span>)*\s*(?:&nbsp;|\t| )*(.*?)</p>',
             block, flags=re.S)
         if not items:
             return m.group(0)
         rows="".join(f'<tr><th>{html.escape(lab)}</th><td>{t.strip()}</td></tr>' for lab,t in items)
-        return (f'<h2 class="priority-summary">Action Alert Prioritized Risk Summary {html.escape(date)}</h2>'
-                f'<table class="priority-summary"><thead><tr><th>Sections</th><th></th></tr></thead>'
+        return (f'<h2 class="priority-summary">{html.escape(heading)} {html.escape(date)}</h2>'
+                f'<table class="priority-summary"><thead><tr><th>{html.escape(header)}</th><th></th></tr></thead>'
                 f'<tbody>{rows}</tbody></table>')
     b=re.sub(
-        r'<p>(?:<strong>)?\s*Action Alert Prioritized (?:Risk )?Summary\s+([^<]+?)(?:</strong>)?\s*</p>'
-        r'(?:\s*<p>\s*(?:<strong>)?\s*Sections\s*(?:</strong>)?\s*</p>)?'
+        r'<p>(?:<strong>)?\s*((?:Action Alert )?Prioritized (?:Risk )?Summary)\s+([^<]+?)(?:</strong>)?\s*</p>'
+        r'(?:\s*<p>\s*(?:<strong>)?\s*(Sections(?: Ranking)?)\s*(?:</strong>)?\s*</p>)?'
         r'((?:\s*<p>(?:(?!</p>).)*?(?:'+_SUM_LAB+r')\b.*?</p>)+)',
         _priority_html, b, count=1, flags=re.S)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
@@ -166,7 +171,14 @@ def og_meta(latest):
     desc=" ".join(parts[:3]) if parts else f"TVV Daily Risk Alert Digest for {datetime.date.fromisoformat(latest).strftime('%B %-d, %Y')}."
     if len(desc)>240 and len(parts)>=2:
         desc=" ".join(parts[:2])
-    title=f"Action Alert Prioritized Risk Summary — {datetime.date.fromisoformat(latest).strftime('%b %-d, %Y')}"
+    h2=re.search(r'<h2 class="priority-summary">([^<]+)</h2>', issue_html)
+    if h2 and "Action Alert Prioritized Risk Summary" in h2.group(1):
+        title_base="Action Alert Prioritized Risk Summary"
+    elif h2 and "Prioritized Risk Summary" in h2.group(1):
+        title_base="Prioritized Risk Summary"
+    else:
+        title_base="Prioritized Risk Summary"
+    title=f"{title_base} — {datetime.date.fromisoformat(latest).strftime('%b %-d, %Y')}"
     e=lambda s: html.escape(s, quote=True)
     return (f'<meta property="og:title" content="{e(title)}">'
             f'<meta property="og:description" content="{e(desc)}">'
