@@ -1,7 +1,7 @@
 """Usage: python3 build.py [YYYY-MM-DD path/to/slate.docx]
 With args: (re)render that issue into issues/DATE.html. Always regenerates index.html tabs from issues/*.html."""
 import mammoth, os, re, html, sys, json, datetime, subprocess
-sys.path.insert(0,'/workspace/risk-watcher'); from tvv_nav import nav, NAV_CSS
+sys.path.insert(0,'/workspace/risk-watcher'); from tvv_nav import nav, NAV_CSS, favicon_links, ensure_favicons
 T="TechVestVentures Daily Risk Alert Digest"
 def render(D,src):
     imgdir=f"issues/img/{D}"; os.makedirs(imgdir,exist_ok=True); n=[0]
@@ -85,7 +85,7 @@ def render(D,src):
     # ● paragraphs -> list items, grouped into <ul>
     b=re.sub(r'<p>\s*●\s*(.*?)</p>',r'<li>\1</li>',b,flags=re.S)
     b=re.sub(r'((?:<li>.*?</li>)+)',r'<ul class="items">\1</ul>',b,flags=re.S)
-    page=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T} — {D}</title><link rel="stylesheet" href="../assets/style.css"><script>if(!/[?&]raw/.test(location.search))location.replace("../index.html#{D}")</script></head><body><main id="issue">{b}</main></body></html>'''
+    page=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T} — {D}</title>{favicon_links("../assets/")}<link rel="stylesheet" href="../assets/style.css"><script>if(!/[?&]raw/.test(location.search))location.replace("../index.html#{D}")</script></head><body><main id="issue">{b}</main></body></html>'''
     open(f"issues/{D}.html","w").write(page); print(D,n[0],"images")
 CSS="""body{margin:0;font:16px/1.5 Arial,Helvetica,sans-serif;color:#111;background:#fafafa}
 #top{position:sticky;top:0;z-index:9;background:#fff;box-shadow:0 2px 6px #0002}
@@ -202,5 +202,5 @@ c.querySelectorAll('a[href^="http"]').forEach(a=>{a.target='_blank';a.rel='noope
 catch(e){m.innerHTML='<p>Could not load issue '+d+'.</p>'}}
 const TT=document.title;tabs.forEach(t=>t.onclick=()=>{location.hash=t.dataset.d});
 addEventListener('hashchange',()=>show(location.hash.slice(1)));show(location.hash.slice(1));"""
-idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title>{og}<link rel="stylesheet" href="assets/style.css"></head><body>{nav("digest")}<div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
-open("index.html","w").write(idx); open(".nojekyll","w").write(""); print("tabs:",issues)
+idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title>{og}{favicon_links("assets/")}<link rel="stylesheet" href="assets/style.css"></head><body>{nav("digest")}<div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
+ensure_favicons("assets"); open("index.html","w").write(idx); open(".nojekyll","w").write(""); print("tabs:",issues)
