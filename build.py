@@ -38,14 +38,38 @@ def render(D,src):
     try:
         import zipfile
         z=zipfile.ZipFile(src); hx=[z.read(n).decode("utf8") for n in sorted(z.namelist()) if re.fullmatch(r"word/header\d+\.xml",n)]
-        hx=next((h for h in hx if "see all graphs click" in re.sub(r"<[^>]+>","",h)),None)
+        # 2026-11-11: Michael rewrote the running header link to "ALL RISK REPORTS click TVV Risk Center"
+        def _plain(h): return re.sub(r"<[^>]+>","",h)
+        hx=next((h for h in hx if "see all graphs click" in _plain(h) or "ALL RISK REPORTS click" in _plain(h)),None)
         if hx:
             paras=["".join(html.unescape(t) if t else " " for t in re.findall(r"<w:t(?: [^>]*)?>([^<]*)</w:t>|<w:tab/>",p)).strip() for p in re.findall(r"<w:p[ >].*?</w:p>",hx,flags=re.S)]
             paras=[re.sub(r"\s+"," ",p) for p in paras if p.strip()]
-            line=" — ".join(paras).replace("see all graphs click","").replace("TVV Risk Center","").strip()
+            blob=" ".join(paras)
+            click="ALL RISK REPORTS click" if "ALL RISK REPORTS click" in blob else "see all graphs click"
+            line=" — ".join(paras).replace(click,"").replace("TVV Risk Center","").strip()
             line=re.sub(r"\s*—\s*—\s*"," — ",line).strip(" —")
-            b=f'<p class="rc-header">{html.escape(line)} &nbsp; <a class="risk-center" href="{RC}">see all graphs click TVV Risk Center</a></p>'+b
+            b=f'<p class="rc-header">{html.escape(line)} &nbsp; <a class="risk-center" href="{RC}">{click} TVV Risk Center</a></p>'+b
     except Exception as e: print("WARN header",e)
+    # 2026-11-12 (v3): Action Alert Prioritized Risk Summary — heading plus a two-column
+    # table (red section label | text) in priority order, with no numbers.
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|METALS|SPACE|INFRA|ODDS|TECH|AI"
+    def _priority_html(m):
+        date=m.group(1).strip()
+        block=m.group(2)
+        items=re.findall(
+            r'<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*('+_SUM_LAB+r')\b\s*(?:</span>)*\s*(?:</strong>)?\s*(?:</span>)*\s*(?:&nbsp;|\t| )*(.*?)</p>',
+            block, flags=re.S)
+        if not items:
+            return m.group(0)
+        rows="".join(f'<tr><th>{html.escape(lab)}</th><td>{t.strip()}</td></tr>' for lab,t in items)
+        return (f'<h2 class="priority-summary">Action Alert Prioritized Risk Summary {html.escape(date)}</h2>'
+                f'<table class="priority-summary"><thead><tr><th>Sections</th><th></th></tr></thead>'
+                f'<tbody>{rows}</tbody></table>')
+    b=re.sub(
+        r'<p>(?:<strong>)?\s*Action Alert Prioritized (?:Risk )?Summary\s+([^<]+?)(?:</strong>)?\s*</p>'
+        r'(?:\s*<p>\s*(?:<strong>)?\s*Sections\s*(?:</strong>)?\s*</p>)?'
+        r'((?:\s*<p>(?:(?!</p>).)*?(?:'+_SUM_LAB+r')\b.*?</p>)+)',
+        _priority_html, b, count=1, flags=re.S)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
     b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
@@ -68,6 +92,11 @@ header img{height:56px}header h1{font-size:1.25rem;margin:0}
 main{max-width:1040px;margin:0 auto;padding:16px;background:#fff}
 main img{width:100%;max-width:1000px;height:auto;display:block;margin:14px auto}
 a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
+h2.priority-summary{border-top:2px solid #C9A227;text-align:center;font-size:1.25rem;margin-top:28px}
+table.priority-summary{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:10.5pt}
+table.priority-summary th,table.priority-summary td{vertical-align:top;padding:2px 10px 2px 0;text-align:left;font-weight:400}
+table.priority-summary thead th{font-weight:700}
+table.priority-summary tbody th{font-weight:700;color:#B91C1C;white-space:nowrap;width:1.2in}
 main table{width:100%;border-collapse:collapse}main td{display:block;width:100%;padding:0}main td:empty{display:none}
 ul.items{margin-left:24px;padding-left:1.1em}
 .action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}a.risk-center{font-weight:700;color:#C00000}.rc-header{font-size:.9rem;color:#1a1a1a;border-bottom:2px solid #C9A227;padding-bottom:6px;margin:0 0 12px}ul.items li{margin:6px 0}
@@ -76,6 +105,47 @@ if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
 open("assets/style.css","w").write(CSS+NAV_CSS)
 issues=sorted([f[:-5] for f in os.listdir("issues") if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.html",f)],reverse=True)
 lab={d:datetime.date.fromisoformat(d).strftime("%a %b %-d, %Y") for d in issues}
+# 2026-11-12: X preview card (1200x675). If the newest issue has a card, emit
+# og:/twitter: tags on index.html so a link posted on X shows a clickable image.
+SITE_URL="https://atlantean2.github.io/tvv-daily-risk-alert-digest/"
+def ensure_x_card(d):
+    dest=f"issues/img/{d}/x-card.png"
+    if os.path.isfile(dest): return dest
+    src=os.path.join("..","issues",d,f"TVV X Card {d}.png")
+    if os.path.isfile(src):
+        os.makedirs(f"issues/img/{d}",exist_ok=True)
+        open(dest,"wb").write(open(src,"rb").read())
+        return dest
+    return None
+def og_meta(latest):
+    if not latest: return ""
+    card=ensure_x_card(latest)
+    if not card: return ""
+    url=SITE_URL+card
+    issue_html=open(f"issues/{latest}.html",encoding="utf-8").read() if os.path.isfile(f"issues/{latest}.html") else ""
+    blocks=re.findall(r'<table class="priority-summary">.*?<tbody>(.*?)</tbody>',issue_html,flags=re.S)
+    parts=[]
+    if blocks:
+        for lab_,t in re.findall(r'<tr><th>([^<]+)</th><td>(.*?)</td></tr>',blocks[0]):
+            t=html.unescape(re.sub(r'<[^>]+>','',t)).strip()
+            parts.append(f"{lab_}: {t}")
+    desc=" ".join(parts[:3]) if parts else f"TVV Daily Risk Alert Digest for {datetime.date.fromisoformat(latest).strftime('%B %-d, %Y')}."
+    if len(desc)>240 and len(parts)>=2:
+        desc=" ".join(parts[:2])
+    title=f"Action Alert Prioritized Risk Summary — {datetime.date.fromisoformat(latest).strftime('%b %-d, %Y')}"
+    e=lambda s: html.escape(s, quote=True)
+    return (f'<meta property="og:title" content="{e(title)}">'
+            f'<meta property="og:description" content="{e(desc)}">'
+            f'<meta property="og:image" content="{e(url)}">'
+            f'<meta property="og:image:width" content="1200">'
+            f'<meta property="og:image:height" content="675">'
+            f'<meta property="og:url" content="{e(SITE_URL)}">'
+            f'<meta property="og:type" content="website">'
+            f'<meta name="twitter:card" content="summary_large_image">'
+            f'<meta name="twitter:title" content="{e(title)}">'
+            f'<meta name="twitter:description" content="{e(desc)}">'
+            f'<meta name="twitter:image" content="{e(url)}">')
+og=og_meta(issues[0] if issues else None)
 tabs="".join(f'<button role="tab" data-d="{d}" aria-selected="false">{lab[d]}</button>' for d in issues)
 JS="""const tabs=[...document.querySelectorAll('#tabs button')],m=document.getElementById('content'),ds=tabs.map(t=>t.dataset.d);
 async function show(d){if(!ds.includes(d))d=ds[0];tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.d==d));
@@ -86,5 +156,5 @@ c.querySelectorAll('a[href^="http"]').forEach(a=>{a.target='_blank';a.rel='noope
 catch(e){m.innerHTML='<p>Could not load issue '+d+'.</p>'}}
 const TT=document.title;tabs.forEach(t=>t.onclick=()=>{location.hash=t.dataset.d});
 addEventListener('hashchange',()=>show(location.hash.slice(1)));show(location.hash.slice(1));"""
-idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title><link rel="stylesheet" href="assets/style.css"></head><body>{nav("digest")}<div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
+idx=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{T}</title>{og}<link rel="stylesheet" href="assets/style.css"></head><body>{nav("digest")}<div id="top"><header><img src="assets/logo.png" alt="TVV logo"><h1>{T}</h1></header><nav id="tabs" role="tablist" aria-label="Issue dates">{tabs}</nav></div><main id="content"></main><script>{JS}</script></body></html>'''
 open("index.html","w").write(idx); open(".nojekyll","w").write(""); print("tabs:",issues)
