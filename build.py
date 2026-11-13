@@ -1,6 +1,6 @@
 """Usage: python3 build.py [YYYY-MM-DD path/to/slate.docx]
 With args: (re)render that issue into issues/DATE.html. Always regenerates index.html tabs from issues/*.html."""
-import mammoth, os, re, html, sys, json, datetime
+import mammoth, os, re, html, sys, json, datetime, subprocess
 sys.path.insert(0,'/workspace/risk-watcher'); from tvv_nav import nav, NAV_CSS
 T="TechVestVentures Daily Risk Alert Digest"
 def render(D,src):
@@ -105,17 +105,51 @@ if len(sys.argv)==3: render(sys.argv[1],sys.argv[2])
 open("assets/style.css","w").write(CSS+NAV_CSS)
 issues=sorted([f[:-5] for f in os.listdir("issues") if re.fullmatch(r"\d{4}-\d{2}-\d{2}\.html",f)],reverse=True)
 lab={d:datetime.date.fromisoformat(d).strftime("%a %b %-d, %Y") for d in issues}
-# 2026-11-12: X preview card (1200x675). If the newest issue has a card, emit
-# og:/twitter: tags on index.html so a link posted on X shows a clickable image.
+# 2026-11-13: X preview card (2400x1350 v2). Generate 7 rows, no footer URL,
+# from the newest issue's mh docx via gate/make_x_card.py, then emit og:/twitter:
+# tags on index.html so a link posted on X shows a clickable image.
 SITE_URL="https://atlantean2.github.io/tvv-daily-risk-alert-digest/"
+XCARD_MAX=4*1024*1024
+def optimize_x_card(path):
+    if not os.path.isfile(path) or os.path.getsize(path)<=XCARD_MAX: return
+    for cmd in (["optipng","-o7","-quiet",path],["zopflipng","-y",path,path]):
+        try:
+            if subprocess.call(["which",cmd[0]],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)==0:
+                subprocess.check_call(cmd)
+                if os.path.getsize(path)<=XCARD_MAX: return
+        except Exception as e: print("WARN x-card lossless",cmd[0],e)
+    if os.path.getsize(path)<=XCARD_MAX: return
+    try:
+        from PIL import Image
+        im=Image.open(path)
+        tmp=path+".tmp.png"
+        # lossless recompress first
+        im.save(tmp, format="PNG", optimize=True, compress_level=9)
+        if os.path.getsize(tmp)<os.path.getsize(path):
+            os.replace(tmp,path)
+        elif os.path.isfile(tmp): os.remove(tmp)
+        if os.path.getsize(path)<=XCARD_MAX: return
+        # careful adaptive palette only if still over 4 MB
+        q=im.convert("P", palette=Image.ADAPTIVE, colors=256)
+        q.save(tmp, format="PNG", optimize=True, compress_level=9)
+        if os.path.getsize(tmp)<=XCARD_MAX or os.path.getsize(tmp)<os.path.getsize(path):
+            os.replace(tmp,path)
+        elif os.path.isfile(tmp): os.remove(tmp)
+    except Exception as e: print("WARN x-card optimize",e)
+    if os.path.getsize(path)>XCARD_MAX: print("WARN x-card still over 4 MB:",os.path.getsize(path))
 def ensure_x_card(d):
     dest=f"issues/img/{d}/x-card.png"
-    if os.path.isfile(dest): return dest
     src=os.path.join("..","issues",d,f"TVV X Card {d}.png")
+    docx=os.path.join("..","issues",d,f"TVV Digest {d} mh.docx")
+    maker=os.path.join("..","gate","make_x_card.py")
+    if os.path.isfile(docx) and os.path.isfile(maker):
+        subprocess.check_call([sys.executable,os.path.abspath(maker),"--date",d,"--docx",os.path.abspath(docx),"--rows","7","--out",os.path.abspath(src)])
+        optimize_x_card(src)
     if os.path.isfile(src):
         os.makedirs(f"issues/img/{d}",exist_ok=True)
         open(dest,"wb").write(open(src,"rb").read())
         return dest
+    if os.path.isfile(dest): return dest
     return None
 def og_meta(latest):
     if not latest: return ""
@@ -137,8 +171,8 @@ def og_meta(latest):
     return (f'<meta property="og:title" content="{e(title)}">'
             f'<meta property="og:description" content="{e(desc)}">'
             f'<meta property="og:image" content="{e(url)}">'
-            f'<meta property="og:image:width" content="1200">'
-            f'<meta property="og:image:height" content="675">'
+            f'<meta property="og:image:width" content="2400">'
+            f'<meta property="og:image:height" content="1350">'
             f'<meta property="og:url" content="{e(SITE_URL)}">'
             f'<meta property="og:type" content="website">'
             f'<meta name="twitter:card" content="summary_large_image">'
