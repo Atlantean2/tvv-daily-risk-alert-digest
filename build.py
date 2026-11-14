@@ -53,7 +53,8 @@ def render(D,src):
     # 2026-11-12 (v3) / 2026-11-13: Prioritized Risk Summary — heading plus a two-column
     # table (red section label | text) in priority order, with no numbers.
     # Accepts the older "Action Alert Prioritized Risk Summary" title and "Sections"
-    # header, and the Nov 13 "Prioritized Risk Summary" / "Sections Ranking" form.
+    # / "Sections Ranking" headers, and the Nov 14 "Prioritized Risk Summary" /
+    # "Sections Ranked for Importance Today" form.
     # "AI BOOST" must precede "AI" in the alternation.
     _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
     def _priority_html(m):
@@ -70,9 +71,13 @@ def render(D,src):
         return (f'<h2 class="priority-summary">{html.escape(heading)} {html.escape(date)}</h2>'
                 f'<table class="priority-summary"><thead><tr><th>{html.escape(header)}</th><th></th></tr></thead>'
                 f'<tbody>{rows}</tbody></table>')
+    _SUM_HDR=r"Sections(?: Ranking| Ranked for Importance Today)?"
+    _BLANK_P=r"(?:\s*<p>\s*(?:<strong>)?\s*(?:&nbsp;|\s)*\s*(?:</strong>)?\s*</p>)*"
     b=re.sub(
         r'<p>(?:<strong>)?\s*((?:Action Alert )?Prioritized (?:Risk )?Summary)\s+([^<]+?)(?:</strong>)?\s*</p>'
-        r'(?:\s*<p>\s*(?:<strong>)?\s*(Sections(?: Ranking)?)\s*(?:</strong>)?\s*</p>)?'
+        +_BLANK_P+
+        r'(?:\s*<p>\s*(?:<strong>)?\s*('+_SUM_HDR+r')\s*(?:</strong>)?\s*</p>)?'
+        +_BLANK_P+
         r'((?:\s*<p>(?:(?!</p>).)*?(?:'+_SUM_LAB+r')\b.*?</p>)+)',
         _priority_html, b, count=1, flags=re.S)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
