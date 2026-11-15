@@ -53,10 +53,10 @@ def render(D,src):
     # 2026-11-12 (v3) / 2026-11-13: Prioritized Risk Summary — heading plus a two-column
     # table (red section label | text) in priority order, with no numbers.
     # Accepts the older "Action Alert Prioritized Risk Summary" title and "Sections"
-    # / "Sections Ranking" headers, and the Nov 14 "Prioritized Risk Summary" /
-    # "Sections Ranked for Importance Today" form.
-    # "AI BOOST" must precede "AI" in the alternation.
-    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
+    # / "Sections Ranking" headers, the Nov 14 "Prioritized Risk Summary" /
+    # "Sections Ranked for Importance Today" form, and the Nov 15 COMMODITY label
+    # (METALS is kept for older issues). "AI BOOST" and "COMMODITY" must precede shorter aliases.
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|COMMODITY|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
     def _priority_html(m):
         heading=m.group(1).strip()
         date=m.group(2).strip()
@@ -102,11 +102,11 @@ header img{height:56px}header h1{font-size:1.25rem;margin:0}
 main{max-width:1040px;margin:0 auto;padding:16px;background:#fff}
 main img{width:100%;max-width:1000px;height:auto;display:block;margin:14px auto}
 a{color:#0645ad;text-decoration:underline}h2{border-top:2px solid #e8063c;padding-top:8px;margin-top:22px;font-size:1.2rem;font-weight:700;scroll-margin-top:130px}
-h2.priority-summary{border-top:2px solid #C9A227;text-align:center;font-size:1.25rem;margin-top:28px}
-table.priority-summary{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:10.5pt}
+h2.priority-summary{border-top:2px solid #C9A227;text-align:left;font-size:1.25rem;margin:28px 0 0;color:#EE0000}
+table.priority-summary{width:100%;border-collapse:collapse;margin:2px 0 20px;font-size:10.5pt}
 table.priority-summary th,table.priority-summary td{vertical-align:top;padding:2px 10px 2px 0;text-align:left;font-weight:400}
-table.priority-summary thead th{font-weight:700}
-table.priority-summary tbody th{font-weight:700;color:#B91C1C;white-space:nowrap;width:1.2in}
+table.priority-summary thead th{font-weight:700;color:#111}
+table.priority-summary tbody th{font-weight:700;color:#B91C1C;white-space:nowrap;width:1.35in}
 main table{width:100%;border-collapse:collapse}main td{display:block;width:100%;padding:0}main td:empty{display:none}
 ul.items{margin-left:24px;padding-left:1.1em}
 .action-box{border:3px solid #e8063c;padding:10px 14px;margin:20px 0}a.risk-center{font-weight:700;color:#C00000}.rc-header{font-size:.9rem;color:#1a1a1a;border-bottom:2px solid #C9A227;padding-bottom:6px;margin:0 0 12px}ul.items li{margin:6px 0}
