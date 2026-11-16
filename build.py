@@ -54,9 +54,13 @@ def render(D,src):
     # table (red section label | text) in priority order, with no numbers.
     # Accepts the older "Action Alert Prioritized Risk Summary" title and "Sections"
     # / "Sections Ranking" headers, the Nov 14 "Prioritized Risk Summary" /
-    # "Sections Ranked for Importance Today" form, and the Nov 15 COMMODITY label
-    # (METALS is kept for older issues). "AI BOOST" and "COMMODITY" must precede shorter aliases.
-    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|COMMODITY|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
+    # "Sections Ranked for Importance Today" form, the Nov 15 COMMODITY label
+    # (METALS is kept for older issues), and the Nov 16 DERIVATIVES label.
+    # "AI BOOST", "COMMODITY", and "DERIVATIVES" must precede shorter aliases.
+    # 2026-11-16: Michael placed the summary both at the start and at the end;
+    # convert every occurrence. Row paragraphs must begin with a label so the
+    # opener cannot swallow later desks that merely mention AI, STOCKS, etc.
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|DERIVATIVES|COMMODITY|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
     def _priority_html(m):
         heading=m.group(1).strip()
         date=m.group(2).strip()
@@ -78,8 +82,8 @@ def render(D,src):
         +_BLANK_P+
         r'(?:\s*<p>\s*(?:<strong>)?\s*('+_SUM_HDR+r')\s*(?:</strong>)?\s*</p>)?'
         +_BLANK_P+
-        r'((?:\s*<p>(?:(?!</p>).)*?(?:'+_SUM_LAB+r')\b.*?</p>)+)',
-        _priority_html, b, count=1, flags=re.S)
+        r'((?:\s*<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*(?:'+_SUM_LAB+r')\b.*?</p>)+)',
+        _priority_html, b, flags=re.S)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
     b=re.sub(r'<p><strong>(\d{2} [A-Z][A-Z &/-]*|\d{1,2}\. [^<]{3,80})</strong></p>',r'<h2 class="desk">\1</h2>',b)
