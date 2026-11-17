@@ -57,10 +57,12 @@ def render(D,src):
     # "Sections Ranked for Importance Today" form, the Nov 15 COMMODITY label
     # (METALS is kept for older issues), and the Nov 16 DERIVATIVES label.
     # "AI BOOST", "COMMODITY", and "DERIVATIVES" must precede shorter aliases.
+    # 2026-11-17: Michael lengthened four labels (GEOPOLITICS, PREDICTIONS, TECHNOLOGY, INFRASTRUCT);
+    # the old short forms stay as aliases so older Digests still parse.
     # 2026-11-16: Michael placed the summary both at the start and at the end;
     # convert every occurrence. Row paragraphs must begin with a label so the
     # opener cannot swallow later desks that merely mention AI, STOCKS, etc.
-    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOL|TERROR|QUAKES|HEALTH|DERIVATIVES|COMMODITY|METALS|SPACE|INFRA|ODDS|TECH|AI BOOST|AI"
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOLITICS|GEOPOL|TERROR|QUAKES|HEALTH|DERIVATIVES|COMMODITY|METALS|SPACE|INFRASTRUCT|INFRA|PREDICTIONS|ODDS|TECHNOLOGY|TECH|AI BOOST|AI"
     def _priority_html(m):
         heading=m.group(1).strip()
         date=m.group(2).strip()
