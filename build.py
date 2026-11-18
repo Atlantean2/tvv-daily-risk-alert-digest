@@ -31,7 +31,7 @@ def render(D,src):
     b=re.sub(r'<p>(?:<[^>]+>)*\s*★\s*=\s*printed in today[^<]*(?:</[^>]+>)*</p>','',b)
     # 2026-11-03 (Michael pt176u): TVV Risk Center link. Merge "see all graphs click" + "TVV Risk Center" into one link,
     # and since mammoth drops Word headers, repeat the docx running-header line (when it carries the link) at the top.
-    RC="https://risk.techvestventures.com/"
+    RC="https://atlantean2.github.io/tvv-daily-risk-alert-digest/"
     b=re.sub(r'<a href="'+re.escape(RC)+r'">\s*(?:<strong>)?\s*see all graphs click\s*(?:</strong>)?\s*</a>(\s*(?:</?strong>\s*)*)TVV Risk Center',
              lambda m: '<a class="risk-center" href="'+RC+'">see all graphs click TVV Risk Center</a>'+m.group(1).replace(' ',''),b)
     b=re.sub(r'<strong>\s*</strong>','',b)
@@ -124,7 +124,7 @@ lab={d:datetime.date.fromisoformat(d).strftime("%a %b %-d, %Y") for d in issues}
 # 2026-11-13: X preview card (2400x1350 v2). Generate 7 rows, no footer URL,
 # from the newest issue's mh docx via gate/make_x_card.py, then emit og:/twitter:
 # tags on index.html so a link posted on X shows a clickable image.
-SITE_URL="https://risk.techvestventures.com/"
+SITE_URL="https://atlantean2.github.io/tvv-daily-risk-alert-digest/"
 XCARD_MAX=4*1024*1024
 def optimize_x_card(path):
     if not os.path.isfile(path) or os.path.getsize(path)<=XCARD_MAX: return
