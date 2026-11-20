@@ -62,14 +62,14 @@ def render(D,src):
     # 2026-11-16: Michael placed the summary both at the start and at the end;
     # convert every occurrence. Row paragraphs must begin with a label so the
     # opener cannot swallow later desks that merely mention AI, STOCKS, etc.
-    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOLITICS|GEOPOL|TERROR|QUAKES|HEALTH|DERIVATIVES|COMMODITY|METALS|SPACE|INFRASTRUCT|INFRA|PREDICTIONS|ODDS|TECHNOLOGY|TECH|AI BOOST|AI"
+    _SUM_LAB=r"ECONOMY|STOCKS|GEOPOLITICS|GEOPOL|TERROR|QUAKES|HEALTH|DERIVATIVES|COMMODITY|METALS|SPACE|INFRASTRUCT|INFRA|PREDICTIONS|ODDS|TECHNOLOGY|TECH|AI\s*[“\"]BOOST[”\"]|AI BOOST|AI"
     def _priority_html(m):
         heading=m.group(1).strip()
         date=m.group(2).strip()
         header=(m.group(3) or "Sections").strip()
         block=m.group(4)
         items=re.findall(
-            r'<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*('+_SUM_LAB+r')\b\s*(?:</span>)*\s*(?:</strong>)?\s*(?:</span>)*\s*(?:&nbsp;|\t| )*(.*?)</p>',
+            r'<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*('+_SUM_LAB+r')(?![A-Za-z])\s*(?:</span>)*\s*(?:</strong>)?\s*(?:</span>)*\s*(?:&nbsp;|\t| )*(.*?)</p>',
             block, flags=re.S)
         if not items:
             return m.group(0)
@@ -84,7 +84,7 @@ def render(D,src):
         +_BLANK_P+
         r'(?:\s*<p>\s*(?:<strong>)?\s*('+_SUM_HDR+r')\s*(?:</strong>)?\s*</p>)?'
         +_BLANK_P+
-        r'((?:\s*<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*(?:'+_SUM_LAB+r')\b.*?</p>)+)',
+        r'((?:\s*<p>\s*(?:<span[^>]*>)*\s*(?:<strong>)?\s*(?:<span[^>]*>)*\s*(?:'+_SUM_LAB+r')(?![A-Za-z]).*?</p>)+)',
         _priority_html, b, flags=re.S)
     b=re.sub(r'<a href="(https?://[^"]+)"',r'<a href="\1" target="_blank" rel="noopener"',b)
     # desk headings -> h2
